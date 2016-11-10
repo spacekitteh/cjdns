@@ -14,7 +14,7 @@ build-cjdns = let version = "19"; in
 
   buildPhase =
     stdenv.lib.optionalString stdenv.isArm "Seccomp_NO=1 "
-    + "bash do -I ${libsodium}/include/";
+    + ''CFLAGS="-I ${lib.getDev libsodium}/include/sodium" bash do'';
  
   meta = with stdenv.lib; {
     homepage = https://github.com/cjdelisle/cjdns;
