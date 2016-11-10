@@ -252,44 +252,8 @@ Builder.configure({
 
     }).nThen(function (waitFor) {
 
-        builder.config.libs.push(dependencyDir + '/cnacl/jsbuild/libnacl.a');
-        builder.config.includeDirs.push(dependencyDir + '/cnacl/jsbuild/include/');
-
-        // needed for Sign.c which pulls in crypto_int32.h
-        builder.config.includeDirs.push(dependencyDir + '/cnacl/jsbuild/include_internal/');
-
-        Fs.exists(dependencyDir + '/cnacl/jsbuild/libnacl.a', waitFor(function (exists) {
-            if (exists) { return; }
-
-            console.log("Build NaCl");
-            var cwd = process.cwd();
-            process.chdir(dependencyDir + '/cnacl/');
-
-            var NaCl = require(process.cwd() + '/node_build/make.js');
-            NaCl.build(function (args, callback) {
-                if (builder.config.systemName !== 'win32') {
-                    args.unshift('-fPIC');
-                }
-
-                args.unshift(builder.config.optimizeLevel, '-fomit-frame-pointer');
-
-                if (CFLAGS) {
-                    [].push.apply(args, CFLAGS.split(' '));
-                }
-
-                if (!builder.config.crossCompiling) {
-                    if (NO_MARCH_FLAG.indexOf(process.arch) < -1) {
-                        builder.config.cflags.push('-march=native');
-                    }
-                }
-
-                builder.cc(args, callback);
-            },
-            builder.config,
-            waitFor(function () {
-                process.chdir(cwd);
-            }));
-        }));
+        builder.config.libs.push('-lsodium');
+        builder.config.includeDirs.push('/usr/include/sodium/');
 
     }).nThen(function (waitFor) {
 
@@ -430,7 +394,7 @@ Builder.configure({
     builder.buildExecutable('crypto/random/randombytes.c');
 
     builder.lintFiles(function (fileName, file, callback) {
-        if (/dependencies/.test(fileName)) {
+        if (/(dependencies|\/usr\/include)/.test(fileName)) {
             callback('', false);
             return;
         }
