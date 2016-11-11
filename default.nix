@@ -8,7 +8,8 @@ build-cjdns = let version = "19"; in
 
   src = ./.;
 
-  buildInputs = [ which python27 nodejs libsodium ] ++
+  buildInputs = [ which python27 nodejs libsodium emacs valgrind /*valkyrie*/ splint gdb rr 
+    lcov pkgconfig gcc cppcheck ] ++
     # for flock
     stdenv.lib.optional stdenv.isLinux utillinux;
 

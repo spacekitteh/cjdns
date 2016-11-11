@@ -71,6 +71,7 @@
 #include "net/NetCore.h"
 
 #include <crypto_scalarmult_curve25519.h>
+#include <sodium.h>
 
 #include <stdlib.h>
 #include <unistd.h>
@@ -262,6 +263,9 @@ void Core_init(struct Allocator* alloc,
 
     // The link between the Pathfinder and the core needs to be asynchronous.
     #ifdef SUBNODE
+    /* TODO: Don't need to include privateKey, as it's only used for generating signing keys.
+     * Switch to using crypto_sign_seed_keypair if we really need to have deterministic keypairs.
+     * Note: We must use sodium_memzero after calling */
         struct SubnodePathfinder* pf = SubnodePathfinder_new(
             alloc, logger, eventBase, rand, nc->myAddress, privateKey, encodingScheme);
     #else
@@ -334,6 +338,9 @@ int Core_main(int argc, char** argv)
         Except_throw(eh, "This is internal to cjdns and shouldn't started manually.");
     }
 
+    // Stir the CPRNG after forking in case of using a custom CPRNG
+    randombytes_stir();
+    
     struct Allocator* alloc = MallocAllocator_new(ALLOCATOR_FAILSAFE);
     struct Log* preLogger = FileWriterLog_new(stderr, alloc);
     struct EventBase* eventBase = EventBase_new(alloc);
@@ -422,5 +429,8 @@ int Core_main(int argc, char** argv)
 
     Core_init(alloc, logger, eventBase, privateKey, admin, rand, eh, NULL, false);
     EventBase_beginLoop(eventBase);
+
+    // Close any custom CPRNG
+    randombytes_close();
     return 0;
 }

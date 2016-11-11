@@ -52,7 +52,7 @@
 #include "util/version/Version.h"
 #include "net/Benchmark.h"
 
-#include "crypto_scalarmult_curve25519.h"
+#include <sodium.h>
 
 #include <stdint.h>
 #include <stdio.h>
@@ -532,6 +532,13 @@ int main(int argc, char** argv)
         fprintf(stderr, "Log_LEVEL = KEYS, EXPECT TO SEE PRIVATE KEYS IN YOUR LOGS!\n");
     #endif
 
+    if (sodium_init() == -1) {
+      fprintf(stderr, "Sodium library unable to initialise!\n");
+       return -1;
+    }
+
+    
+    
     if (argc > 1 && (!CString_strcmp("angel", argv[1]) || !CString_strcmp("core", argv[1]))) {
         return Core_main(argc, argv);
     }

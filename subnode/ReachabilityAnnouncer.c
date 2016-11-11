@@ -625,6 +625,7 @@ struct ReachabilityAnnouncer* ReachabilityAnnouncer_new(struct Allocator* alloca
 
     setupNextMsg(rap);
 
+    //TODO: get rid of Sign_*.c and use libsodium crypto_sign_*
     Sign_signingKeyPairFromCurve25519(rap->signingKeypair, privateKey);
     Sign_publicKeyFromKeyPair(rap->pubSigningKey, rap->signingKeypair);
 

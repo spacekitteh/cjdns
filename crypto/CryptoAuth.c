@@ -36,6 +36,8 @@
 #include "crypto_hash_sha256.h"
 #include "crypto_scalarmult_curve25519.h"
 
+#include <sodium.h>
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -78,7 +80,10 @@ static inline void getSharedSecret(uint8_t outputSecret[32],
                                    struct Log* logger)
 {
     if (passwordHash == NULL) {
-        crypto_box_curve25519xsalsa20poly1305_beforenm(outputSecret, herPublicKey, myPrivateKey);
+      if (crypto_box_beforenm(outputSecret, herPublicKey, myPrivateKey) != 0) {
+          fprintf (stderr, "Unable to precompute shared secret!");
+	  return;
+      }
     } else {
         union {
             struct {
@@ -88,9 +93,17 @@ static inline void getSharedSecret(uint8_t outputSecret[32],
             uint8_t bytes[64];
         } buff;
 
-        crypto_scalarmult_curve25519(buff.components.key, myPrivateKey, herPublicKey);
+        if (!crypto_scalarmult(buff.components.key, myPrivateKey, herPublicKey)) {
+	    fprintf(stderr, "Unable to compute shared secret!");
+	    return;
+	}
         Bits_memcpy(buff.components.passwd, passwordHash, 32);
-        crypto_hash_sha256(outputSecret, buff.bytes, 64);
+        /** TODO: q represents the X coordinate of a point on the curve.
+	 * As a result, the number of possible keys is limited to the group size (≈2^252),
+	 * and the key distribution is not uniform. For this reason,
+	 * instead of directly using the output of the multiplication q as a shared key,
+	 * it is recommended to use h(q || pk1 || pk2), with pk1 and pk2 being the public keys.*/
+        crypto_generichash(outputSecret, 32, buff.bytes, 64, NULL, 0);
     }
     if (Defined(Log_KEYS)) {
         uint8_t myPublicKeyHex[65];
